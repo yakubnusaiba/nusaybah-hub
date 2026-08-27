@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
-import logoAsset from "@/assets/logo.webp.asset.json";
+import logoUrl from "@/assets/logo.webp";
 import { ROLE_LABEL, useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -84,9 +84,9 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
       >
         <div className="flex items-center gap-3 border-b border-gold/25 px-5 py-4">
           <img
-            src={logoAsset.url}
+            src={logoUrl}
             alt="Nusaybah Hub logo"
-            className="h-11 w-11 rounded-lg bg-primary-foreground object-contain p-0.5"
+            className="h-11 w-11 rounded-full bg-primary-foreground object-cover"
           />
           <span className="text-lg font-bold leading-tight">
             Nusaybah <span className="text-gold">Hub</span>
