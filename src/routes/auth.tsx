@@ -29,7 +29,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -53,7 +53,13 @@ function AuthPage() {
     setBusy(true);
     setError(null);
     setMessage(null);
-    if (mode === "signup") {
+    if (mode === "forgot") {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (err) setError(err.message);
+      else setMessage("Password reset link sent. Check your email inbox.");
+    } else if (mode === "signup") {
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
@@ -75,10 +81,16 @@ function AuthPage() {
   const google = async () => {
     setError(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/oauth-callback`,
     });
-    if (result.error) setError("Google sign-in failed. Please try again.");
+    if (result.error) {
+      setError("Google sign-in failed. Please try again.");
+      return;
+    }
+    if (result.redirected) return;
+    void navigate({ to: "/dashboard", replace: true });
   };
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-primary px-4 py-10">
