@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { KeyRound, Loader2, LogIn, UserPlus } from "lucide-react";
 
 import logoUrl from "@/assets/logo.webp";
 import { btnGold, btnOutline, inputClass, labelClass } from "@/components/AppShell";
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -53,7 +53,13 @@ function AuthPage() {
     setBusy(true);
     setError(null);
     setMessage(null);
-    if (mode === "signup") {
+    if (mode === "forgot") {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (err) setError(err.message);
+      else setMessage("Password reset link sent. Check your email inbox.");
+    } else if (mode === "signup") {
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
@@ -75,10 +81,16 @@ function AuthPage() {
   const google = async () => {
     setError(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/oauth-callback`,
     });
-    if (result.error) setError("Google sign-in failed. Please try again.");
+    if (result.error) {
+      setError("Google sign-in failed. Please try again.");
+      return;
+    }
+    if (result.redirected) return;
+    void navigate({ to: "/dashboard", replace: true });
   };
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-primary px-4 py-10">
@@ -89,8 +101,13 @@ function AuthPage() {
             Nusaybah <span className="text-gold">Hub</span> Manager
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin" ? "Sign in to your staff account" : "Create your staff account"}
+            {mode === "signin"
+              ? "Sign in to your staff account"
+              : mode === "signup"
+                ? "Create your staff account"
+                : "We'll email you a password reset link"}
           </p>
+
         </div>
 
         <form onSubmit={submit} className="space-y-3">
@@ -135,21 +152,36 @@ function AuthPage() {
               required
             />
           </div>
-          <div>
-            <label className={labelClass} htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <label className={labelClass} htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+              {mode === "signin" && (
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                  onClick={() => {
+                    setMode("forgot");
+                    setError(null);
+                    setMessage(null);
+                  }}
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           {message && <p className="text-sm font-medium text-success">{message}</p>}
@@ -159,20 +191,31 @@ function AuthPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : mode === "signin" ? (
               <LogIn className="h-4 w-4" />
-            ) : (
+            ) : mode === "signup" ? (
               <UserPlus className="h-4 w-4" />
+            ) : (
+              <KeyRound className="h-4 w-4" />
             )}
-            {mode === "signin" ? "Sign in" : "Create account"}
+            {mode === "signin"
+              ? "Sign in"
+              : mode === "signup"
+                ? "Create account"
+                : "Send reset link"}
           </button>
         </form>
 
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-        </div>
+        {mode !== "forgot" && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /> or{" "}
+              <span className="h-px flex-1 bg-border" />
+            </div>
 
-        <button onClick={google} className={`${btnOutline} w-full justify-center`}>
-          Continue with Google
-        </button>
+            <button onClick={google} className={`${btnOutline} w-full justify-center`}>
+              Continue with Google
+            </button>
+          </>
+        )}
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
           {mode === "signin" ? "New staff member?" : "Already have an account?"}{" "}
@@ -191,6 +234,7 @@ function AuthPage() {
           The first account created becomes the Admin. New accounts join as Staff until an admin
           upgrades them.
         </p>
+
       </div>
     </main>
   );
