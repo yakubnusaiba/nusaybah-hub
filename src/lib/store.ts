@@ -135,7 +135,7 @@ export function useSettings() {
 
 export function exportCSV(filename: string, rows: Record<string, unknown>[]) {
   if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
+  const headers = Object.keys(rows[0] ?? {});
   const csv = [
     headers.join(","),
     ...rows.map((r) =>
