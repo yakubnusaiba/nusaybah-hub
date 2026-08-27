@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, LogIn, UserPlus } from "lucide-react";
 
-import logoAsset from "@/assets/logo.webp.asset.json";
+import logoUrl from "@/assets/logo.webp";
 import { btnGold, btnOutline, inputClass, labelClass } from "@/components/AppShell";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,7 +84,7 @@ function AuthPage() {
     <main className="flex min-h-screen items-center justify-center bg-primary px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
-          <img src={logoAsset.url} alt="Nusaybah Hub logo" className="h-20 w-20 object-contain" />
+          <img src={logoUrl} alt="Nusaybah Hub logo" className="h-20 w-20 rounded-full border-2 border-gold/50 object-cover" />
           <h1 className="mt-3 text-xl font-bold text-primary">
             Nusaybah <span className="text-gold">Hub</span> Manager
           </h1>

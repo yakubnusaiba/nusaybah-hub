@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BarChart3, Boxes, FileText, ShieldCheck, ShoppingCart, Users } from "lucide-react";
 
-import logoAsset from "@/assets/logo.webp.asset.json";
+import logoUrl from "@/assets/logo.webp";
 import { btnGold, btnOutline } from "@/components/AppShell";
 
 export const Route = createFileRoute("/")({
@@ -36,7 +36,7 @@ function Landing() {
     <main className="min-h-screen bg-primary text-primary-foreground">
       <div className="mx-auto max-w-4xl px-5 py-16 sm:py-24">
         <div className="flex flex-col items-center text-center">
-          <img src={logoAsset.url} alt="Nusaybah Hub logo" className="h-28 w-28 object-contain" />
+          <img src={logoUrl} alt="Nusaybah Hub logo" className="h-28 w-28 rounded-full border-2 border-gold/50 bg-primary-foreground object-cover" />
           <h1 className="mt-5 text-3xl font-bold sm:text-4xl">
             Nusaybah <span className="text-gold">Hub</span> Business Manager
           </h1>
