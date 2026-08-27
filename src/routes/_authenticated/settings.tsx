@@ -99,7 +99,7 @@ function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button type="submit" className={btnGold}>
+            <button type="submit" className={btnGold} disabled={!isAdmin}>
               <Save className="h-4 w-4" /> Save Settings
             </button>
             {saved && <span className="text-sm font-medium text-success">Saved!</span>}
