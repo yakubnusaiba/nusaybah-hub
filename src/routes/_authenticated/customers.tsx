@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Download, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useAuth } from "@/lib/auth";
 import {
   AppShell,
   Card,
@@ -37,6 +38,8 @@ const emptyForm = { name: "", phone: "", email: "", address: "" };
 
 function CustomersPage() {
   const { value: customers, save } = useCustomers();
+  const { canDelete } = useAuth();
+
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
@@ -142,16 +145,18 @@ function CustomersPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button
-                        className="text-destructive hover:opacity-70"
-                        aria-label="Delete"
-                        onClick={() => {
-                          if (confirm("Delete this customer?"))
-                            save(customers.filter((x) => x.id !== c.id));
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          className="text-destructive hover:opacity-70"
+                          aria-label="Delete"
+                          onClick={() => {
+                            if (confirm("Delete this customer?"))
+                              save(customers.filter((x) => x.id !== c.id));
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

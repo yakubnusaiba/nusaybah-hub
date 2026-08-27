@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Download, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useAuth } from "@/lib/auth";
 import {
   AppShell,
   Card,
@@ -38,6 +39,8 @@ const emptyForm = { name: "", category: "", price: "", qty: "", lowStock: "5" };
 
 function InventoryPage() {
   const { value: products, save } = useProducts();
+  const { canDelete } = useAuth();
+
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -152,13 +155,15 @@ function InventoryPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button
-                        className="text-destructive hover:opacity-70"
-                        onClick={() => remove(p.id)}
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          className="text-destructive hover:opacity-70"
+                          onClick={() => remove(p.id)}
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

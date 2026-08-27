@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Download, Plus, Printer, Receipt, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useAuth } from "@/lib/auth";
 import {
   AppShell,
   Card,
@@ -47,6 +48,8 @@ export const Route = createFileRoute("/_authenticated/sales")({
 
 function SalesPage() {
   const { value: sales, save } = useSales();
+  const { canDelete } = useAuth();
+
   const { value: products, save: saveProducts } = useProducts();
   const { value: customers } = useCustomers();
   const { value: settings } = useSettings();
@@ -163,16 +166,18 @@ function SalesPage() {
                       >
                         <Receipt className="h-4 w-4" />
                       </button>
-                      <button
-                        className="text-destructive hover:opacity-70"
-                        aria-label="Delete"
-                        onClick={() => {
-                          if (confirm("Delete this sale record?"))
-                            save(sales.filter((x) => x.id !== s.id));
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          className="text-destructive hover:opacity-70"
+                          aria-label="Delete"
+                          onClick={() => {
+                            if (confirm("Delete this sale record?"))
+                              save(sales.filter((x) => x.id !== s.id));
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

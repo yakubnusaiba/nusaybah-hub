@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Eye, FilePlus2, Printer, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { useAuth } from "@/lib/auth";
 import {
   AppShell,
   Card,
@@ -43,6 +44,8 @@ export const Route = createFileRoute("/_authenticated/invoices")({
 
 function InvoicesPage() {
   const { value: invoices, save } = useInvoices();
+  const { canDelete } = useAuth();
+
   const { value: sales } = useSales();
   const { value: settings } = useSettings();
   const [viewing, setViewing] = useState<Invoice | null>(null);
@@ -109,16 +112,18 @@ function InvoicesPage() {
                     >
                       <Eye className="h-4 w-4" />
                     </button>
-                    <button
-                      className={btnDanger}
-                      aria-label="Delete"
-                      onClick={() => {
-                        if (confirm("Delete this invoice?"))
-                          save(invoices.filter((i) => i.id !== inv.id));
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {canDelete && (
+                      <button
+                        className={btnDanger}
+                        aria-label="Delete"
+                        onClick={() => {
+                          if (confirm("Delete this invoice?"))
+                            save(invoices.filter((i) => i.id !== inv.id));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
