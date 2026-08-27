@@ -15,7 +15,7 @@ import {
 } from "@/components/AppShell";
 import { exportCSV, generateId, useCustomers, type Customer } from "@/lib/store";
 
-export const Route = createFileRoute("/customers")({
+export const Route = createFileRoute("/_authenticated/customers")({
   head: () => ({
     meta: [
       { title: "Customers — Nusaybah Hub Business Manager" },

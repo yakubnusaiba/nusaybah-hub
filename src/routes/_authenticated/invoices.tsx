@@ -23,7 +23,7 @@ import {
   type Invoice,
 } from "@/lib/store";
 
-export const Route = createFileRoute("/invoices")({
+export const Route = createFileRoute("/_authenticated/invoices")({
   head: () => ({
     meta: [
       { title: "Invoices — Nusaybah Hub Business Manager" },

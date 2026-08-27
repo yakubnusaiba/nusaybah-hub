@@ -26,7 +26,7 @@ import {
   type Sale,
 } from "@/lib/store";
 
-export const Route = createFileRoute("/sales")({
+export const Route = createFileRoute("/_authenticated/sales")({
   head: () => ({
     meta: [
       { title: "Sales — Nusaybah Hub Business Manager" },

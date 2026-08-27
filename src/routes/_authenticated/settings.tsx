@@ -12,7 +12,7 @@ import {
 } from "@/components/AppShell";
 import { defaultSettings, useSettings } from "@/lib/store";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Nusaybah Hub Business Manager" },
