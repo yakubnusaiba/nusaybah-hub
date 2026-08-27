@@ -148,7 +148,9 @@ function useCollection<T extends { id: string }>(
           if (error) throw error;
         }
         if (changed.length) {
-          const { error } = await supabase.from(table).upsert(changed.map(toRow));
+          const { error } = await (supabase.from(table) as unknown as {
+            upsert: (rows: Row[]) => Promise<{ error: unknown }>;
+          }).upsert(changed.map(toRow));
           if (error) throw error;
         }
       } catch (error) {
