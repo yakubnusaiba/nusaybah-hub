@@ -122,13 +122,13 @@ function Dashboard() {
       <Card title="Sales Overview (Last 7 Days)">
         <div className="flex h-48 items-end gap-3">
           {chart.map((d) => (
-            <div key={d.label} className="flex flex-1 flex-col items-center gap-2">
+            <div key={d.label} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
               <span className="text-[0.65rem] text-muted-foreground">
                 {d.value ? `₦${formatCurrency(d.value)}` : ""}
               </span>
               <div
                 className="w-full rounded-t-md bg-gradient-to-t from-primary to-gold transition-all"
-                style={{ height: `${Math.max(d.height, 3)}%` }}
+                style={{ height: `${Math.max(d.height, 4)}%`, minHeight: 8 }}
               />
               <span className="text-xs text-muted-foreground">{d.label}</span>
             </div>
