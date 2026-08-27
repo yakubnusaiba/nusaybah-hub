@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { supabase } from "@/integrations/supabase/client";
 
 export type Product = {
   id: string;
@@ -53,10 +55,9 @@ export const defaultSettings: Settings = {
   email: "",
 };
 
-const PREFIX = "nusaybah_";
-
 export function generateId() {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 export function formatCurrency(n: number) {
@@ -72,65 +73,238 @@ export function formatDate(iso: string) {
   });
 }
 
-function read<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(PREFIX + key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
+/* ------------------------------------------------------------------ */
+/* Cloud-backed collections (shared across all signed-in staff)        */
+/* ------------------------------------------------------------------ */
+
+type Row = Record<string, unknown>;
 
 const listeners = new Set<() => void>();
-
-function emit() {
+function emitAll() {
   listeners.forEach((fn) => fn());
 }
 
-export function useStored<T>(key: string, fallback: T) {
-  const [value, setValue] = useState<T>(fallback);
+function useCollection<T extends { id: string }>(
+  table: "products" | "customers" | "sales" | "invoices",
+  fromRow: (row: Row) => T,
+  toRow: (item: T) => Row,
+  orderBy: { column: string; ascending: boolean },
+) {
+  const [value, setValue] = useState<T[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const previous = useRef<T[]>([]);
 
-  const sync = useCallback(() => {
-    setValue(read<T>(key, fallback));
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .order(orderBy.column, { ascending: orderBy.ascending });
+    if (error) {
+      console.error(`Failed to load ${table}`, error);
+      setHydrated(true);
+      return;
+    }
+    const mapped = (data ?? []).map((row) => fromRow(row as Row));
+    previous.current = mapped;
+    setValue(mapped);
+    setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [table]);
 
   useEffect(() => {
-    sync();
-    setHydrated(true);
+    void load();
+    const sync = () => void load();
     listeners.add(sync);
     return () => {
       listeners.delete(sync);
     };
-  }, [sync]);
+  }, [load]);
 
   const save = useCallback(
-    (next: T) => {
-      window.localStorage.setItem(PREFIX + key, JSON.stringify(next));
-      emit();
+    async (next: T[]) => {
+      const before = previous.current;
+      // optimistic
+      previous.current = next;
+      setValue(next);
+
+      const beforeById = new Map(before.map((i) => [i.id, i]));
+      const nextIds = new Set(next.map((i) => i.id));
+
+      const removed = before.filter((i) => !nextIds.has(i.id));
+      const changed = next.filter((i) => {
+        const old = beforeById.get(i.id);
+        return !old || JSON.stringify(old) !== JSON.stringify(i);
+      });
+
+      try {
+        if (removed.length) {
+          const { error } = await supabase
+            .from(table)
+            .delete()
+            .in(
+              "id",
+              removed.map((i) => i.id),
+            );
+          if (error) throw error;
+        }
+        if (changed.length) {
+          const { error } = await (supabase.from(table) as unknown as {
+            upsert: (rows: Row[]) => Promise<{ error: unknown }>;
+          }).upsert(changed.map(toRow));
+          if (error) throw error;
+        }
+      } catch (error) {
+        console.error(`Failed to save ${table}`, error);
+        alert(
+          `Could not save changes to ${table}. You may not have permission for this action.`,
+        );
+      }
+      emitAll();
     },
-    [key],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table],
   );
 
   return { value, save, hydrated } as const;
 }
 
+const num = (v: unknown) => Number(v ?? 0);
+const str = (v: unknown) => String(v ?? "");
+
 export function useProducts() {
-  return useStored<Product[]>("products", []);
+  return useCollection<Product>(
+    "products",
+    (r) => ({
+      id: str(r["id"]),
+      name: str(r["name"]),
+      category: str(r["category"]),
+      price: num(r["price"]),
+      qty: num(r["qty"]),
+      lowStock: num(r["low_stock"]),
+    }),
+    (p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      qty: p.qty,
+      low_stock: p.lowStock,
+    }),
+    { column: "created_at", ascending: true },
+  );
 }
+
 export function useCustomers() {
-  return useStored<Customer[]>("customers", []);
+  return useCollection<Customer>(
+    "customers",
+    (r) => ({
+      id: str(r["id"]),
+      name: str(r["name"]),
+      phone: str(r["phone"]),
+      email: str(r["email"]),
+      address: str(r["address"]),
+    }),
+    (c) => ({ id: c.id, name: c.name, phone: c.phone, email: c.email, address: c.address }),
+    { column: "created_at", ascending: true },
+  );
 }
+
 export function useSales() {
-  return useStored<Sale[]>("sales", []);
+  return useCollection<Sale>(
+    "sales",
+    (r) => ({
+      id: str(r["id"]),
+      productId: str(r["product_id"]),
+      productName: str(r["product_name"]),
+      qty: num(r["qty"]),
+      price: num(r["price"]),
+      total: num(r["total"]),
+      customerId: str(r["customer_id"]),
+      customerName: str(r["customer_name"]),
+      date: str(r["date"]),
+    }),
+    (s) => ({
+      id: s.id,
+      product_id: s.productId || null,
+      product_name: s.productName,
+      qty: s.qty,
+      price: s.price,
+      total: s.total,
+      customer_id: s.customerId || null,
+      customer_name: s.customerName,
+      date: s.date,
+    }),
+    { column: "date", ascending: false },
+  );
 }
+
 export function useInvoices() {
-  return useStored<Invoice[]>("invoices", []);
+  return useCollection<Invoice>(
+    "invoices",
+    (r) => ({
+      id: str(r["id"]),
+      invoiceNumber: str(r["invoice_number"]),
+      saleId: str(r["sale_id"]),
+      date: str(r["date"]),
+      customer: str(r["customer"]),
+      items: (r["items"] as Invoice["items"]) ?? [],
+      total: num(r["total"]),
+    }),
+    (i) => ({
+      id: i.id,
+      invoice_number: i.invoiceNumber,
+      sale_id: i.saleId || null,
+      date: i.date,
+      customer: i.customer,
+      items: i.items,
+      total: i.total,
+    }),
+    { column: "date", ascending: false },
+  );
 }
+
 export function useSettings() {
-  return useStored<Settings>("settings", defaultSettings);
+  const [value, setValue] = useState<Settings>(defaultSettings);
+  const [hydrated, setHydrated] = useState(false);
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("store_settings").select("*").eq("id", true).maybeSingle();
+    if (data) {
+      setValue({
+        storeName: str(data.store_name) || defaultSettings.storeName,
+        address: str(data.address),
+        phone: str(data.phone),
+        email: str(data.email),
+      });
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    void load();
+    listeners.add(load);
+    return () => {
+      listeners.delete(load);
+    };
+  }, [load]);
+
+  const save = useCallback(async (next: Settings) => {
+    setValue(next);
+    const { error } = await supabase.from("store_settings").update({
+      store_name: next.storeName,
+      address: next.address,
+      phone: next.phone,
+      email: next.email,
+      updated_at: new Date().toISOString(),
+    }).eq("id", true);
+    if (error) {
+      console.error(error);
+      alert("Only an admin can change store settings.");
+      void load();
+    }
+  }, [load]);
+
+  return { value, save, hydrated } as const;
 }
 
 export function exportCSV(filename: string, rows: Record<string, unknown>[]) {
