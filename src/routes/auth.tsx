@@ -152,21 +152,36 @@ function AuthPage() {
               required
             />
           </div>
-          <div>
-            <label className={labelClass} htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <label className={labelClass} htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+              {mode === "signin" && (
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                  onClick={() => {
+                    setMode("forgot");
+                    setError(null);
+                    setMessage(null);
+                  }}
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           {message && <p className="text-sm font-medium text-success">{message}</p>}
@@ -176,20 +191,31 @@ function AuthPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : mode === "signin" ? (
               <LogIn className="h-4 w-4" />
-            ) : (
+            ) : mode === "signup" ? (
               <UserPlus className="h-4 w-4" />
+            ) : (
+              <KeyRound className="h-4 w-4" />
             )}
-            {mode === "signin" ? "Sign in" : "Create account"}
+            {mode === "signin"
+              ? "Sign in"
+              : mode === "signup"
+                ? "Create account"
+                : "Send reset link"}
           </button>
         </form>
 
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-        </div>
+        {mode !== "forgot" && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /> or{" "}
+              <span className="h-px flex-1 bg-border" />
+            </div>
 
-        <button onClick={google} className={`${btnOutline} w-full justify-center`}>
-          Continue with Google
-        </button>
+            <button onClick={google} className={`${btnOutline} w-full justify-center`}>
+              Continue with Google
+            </button>
+          </>
+        )}
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
           {mode === "signin" ? "New staff member?" : "Already have an account?"}{" "}
@@ -208,6 +234,7 @@ function AuthPage() {
           The first account created becomes the Admin. New accounts join as Staff until an admin
           upgrades them.
         </p>
+
       </div>
     </main>
   );
