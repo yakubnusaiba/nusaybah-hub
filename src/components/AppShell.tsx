@@ -1,10 +1,13 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
   Boxes,
   FileText,
   Globe,
+  LogOut,
   Menu,
+  ShieldCheck,
   Moon,
   Settings as SettingsIcon,
   ShoppingCart,
@@ -16,9 +19,11 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 
 import logoAsset from "@/assets/logo.webp.asset.json";
+import { ROLE_LABEL, useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: BarChart3 },
+  { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/sales", label: "Sales", icon: ShoppingCart },
   { to: "/customers", label: "Customers", icon: Users },
@@ -30,6 +35,16 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
   const [dark, setDark] = useState(false);
   const [today, setToday] = useState("");
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { profile, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    void navigate({ to: "/auth", replace: true });
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("nusaybah_theme") === "dark";
@@ -91,7 +106,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
             <Link
               key={to}
               to={to}
-              activeOptions={{ exact: to === "/" }}
+              activeOptions={{ exact: to === "/dashboard" }}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-primary-foreground/80 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
               activeProps={{
                 className:
@@ -115,6 +130,16 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
             }}
           >
             <SettingsIcon className="h-4 w-4" /> Settings
+          </Link>
+          <Link
+            to="/staff"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-primary-foreground/80 transition-colors hover:bg-primary-foreground/10"
+            activeProps={{
+              className:
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 font-semibold bg-gold/15 text-gold border-l-4 border-gold",
+            }}
+          >
+            <ShieldCheck className="h-4 w-4" /> {isAdmin ? "Staff & Roles" : "My Team"}
           </Link>
 
           <p className="px-2 pb-1 pt-4 text-[0.7rem] uppercase tracking-widest text-gold/70">
@@ -157,6 +182,26 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
             >
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
+            {profile && (
+              <div className="flex items-center gap-2 border-l border-border pl-3">
+                <div className="hidden text-right leading-tight sm:block">
+                  <p className="text-sm font-semibold text-primary">
+                    {profile.fullName || profile.email}
+                  </p>
+                  <p className="text-[0.7rem] uppercase tracking-wide text-gold">
+                    {ROLE_LABEL[profile.role]}
+                  </p>
+                </div>
+                <button
+                  onClick={signOut}
+                  aria-label="Sign out"
+                  title="Sign out"
+                  className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </header>
         <main className="p-4 sm:p-6">{children}</main>
