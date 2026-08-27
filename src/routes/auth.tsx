@@ -101,8 +101,13 @@ function AuthPage() {
             Nusaybah <span className="text-gold">Hub</span> Manager
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin" ? "Sign in to your staff account" : "Create your staff account"}
+            {mode === "signin"
+              ? "Sign in to your staff account"
+              : mode === "signup"
+                ? "Create your staff account"
+                : "We'll email you a password reset link"}
           </p>
+
         </div>
 
         <form onSubmit={submit} className="space-y-3">
