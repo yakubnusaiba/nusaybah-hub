@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { KeyRound, Loader2 } from "lucide-react";
+import { CheckCircle2, KeyRound, Loader2, LogIn } from "lucide-react";
+
 
 import logoUrl from "@/assets/logo.webp";
 import { btnGold, inputClass, labelClass } from "@/components/AppShell";
