@@ -340,11 +340,156 @@ function SalesPage() {
               ))}
             </select>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>Amount Paid Today (₦)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                className={inputClass}
+                value={form.amountPaid}
+                onChange={(e) => setForm({ ...form, amountPaid: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Payment Method</label>
+              <select
+                className={inputClass}
+                value={form.paymentMethod}
+                onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {(() => {
+            const total = (Number(form.price) || 0) * (Number(form.qty) || 0);
+            const paid = Math.min(total, Math.max(0, Number(form.amountPaid) || 0));
+            return (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-semibold">₦{formatCurrency(total)}</span>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span className="text-muted-foreground">Balance remaining</span>
+                  <span className="font-semibold">₦{formatCurrency(total - paid)}</span>
+                </div>
+              </div>
+            );
+          })()}
           <button type="submit" className={`${btnSuccess} w-full justify-center`}>
             Save Sale
           </button>
         </form>
       </Modal>
+
+      <Modal open={!!liveSale} onClose={() => setPayFor(null)} title="Add Payment">
+        {liveSale && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+              <p className="font-semibold">
+                {liveSale.productName} — {liveSale.customerName}
+              </p>
+              <div className="mt-2 flex justify-between">
+                <span className="text-muted-foreground">Total</span>
+                <span>₦{formatCurrency(liveSale.total)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount paid</span>
+                <span>₦{formatCurrency(liveSale.amountPaid)}</span>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <span>Balance remaining</span>
+                <span>₦{formatCurrency(balanceOf(liveSale))}</span>
+              </div>
+              <span
+                className={`mt-2 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(paymentStatus(liveSale))}`}
+              >
+                {paymentStatus(liveSale)}
+              </span>
+            </div>
+
+            {history.length > 0 && (
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-border p-3 text-sm">
+                <p className={labelClass}>Payment history</p>
+                <ul className="divide-y divide-border">
+                  {history.map((p) => (
+                    <li key={p.id} className="flex justify-between py-1.5">
+                      <span className="text-muted-foreground">
+                        {formatDate(p.date)} · {p.method}
+                        {p.note ? ` · ${p.note}` : ""}
+                      </span>
+                      <span className="font-medium">₦{formatCurrency(p.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {balanceOf(liveSale) > 0 ? (
+              <form onSubmit={submitPayment} className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Amount (₦)</label>
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      max={balanceOf(liveSale)}
+                      className={inputClass}
+                      value={payForm.amount}
+                      onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Payment Method</label>
+                    <select
+                      className={inputClass}
+                      value={payForm.method}
+                      onChange={(e) => setPayForm({ ...payForm, method: e.target.value })}
+                    >
+                      {PAYMENT_METHODS.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Note (optional)</label>
+                  <input
+                    className={inputClass}
+                    value={payForm.note}
+                    onChange={(e) => setPayForm({ ...payForm, note: e.target.value })}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className={`${btnSuccess} w-full justify-center`}
+                >
+                  {saving ? "Saving..." : "Record Payment"}
+                </button>
+              </form>
+            ) : (
+              <p className="text-center text-sm font-semibold text-success">
+                This sale is fully paid.
+              </p>
+            )}
+            <button className={`${btnOutline} w-full justify-center`} onClick={() => setPayFor(null)}>
+              Close
+            </button>
+          </div>
+        )}
+      </Modal>
+
 
       <Modal open={!!receipt} onClose={() => setReceipt(null)} title="Receipt">
         {receipt && (
