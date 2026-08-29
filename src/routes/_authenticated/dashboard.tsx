@@ -162,6 +162,12 @@ function Dashboard() {
                     <p className="text-xs text-muted-foreground">
                       {s.customerName} · {formatDate(s.date)}
                     </p>
+                    <span
+                      className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[0.65rem] font-semibold ${statusClasses(paymentStatus(s))}`}
+                    >
+                      {paymentStatus(s)}
+                      {balanceOf(s) > 0 ? ` · ₦${formatCurrency(balanceOf(s))} left` : ""}
+                    </span>
                   </div>
                   <span className="font-semibold text-primary">₦{formatCurrency(s.total)}</span>
                 </li>
