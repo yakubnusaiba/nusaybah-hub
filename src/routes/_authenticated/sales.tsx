@@ -205,7 +205,11 @@ function SalesPage() {
                   <th className="rounded-l-lg px-3 py-2">#</th>
                   <th className="px-3 py-2">Product</th>
                   <th className="px-3 py-2">Qty</th>
-                  <th className="px-3 py-2">Amount (₦)</th>
+                  <th className="px-3 py-2">Total (₦)</th>
+                  <th className="px-3 py-2">Paid (₦)</th>
+                  <th className="px-3 py-2">Balance (₦)</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Method</th>
                   <th className="px-3 py-2">Customer</th>
                   <th className="px-3 py-2">Date</th>
                   <th className="rounded-r-lg px-3 py-2">Actions</th>
@@ -220,9 +224,31 @@ function SalesPage() {
                     <td className="px-3 py-2.5 font-semibold text-gold">
                       ₦{formatCurrency(s.total)}
                     </td>
+                    <td className="px-3 py-2.5">₦{formatCurrency(s.amountPaid)}</td>
+                    <td className="px-3 py-2.5 font-medium">₦{formatCurrency(balanceOf(s))}</td>
+                    <td className="px-3 py-2.5">
+                      <span
+                        className={`inline-block whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(paymentStatus(s))}`}
+                      >
+                        {paymentStatus(s)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{s.paymentMethod}</td>
                     <td className="px-3 py-2.5">{s.customerName}</td>
                     <td className="px-3 py-2.5 text-muted-foreground">{formatDate(s.date)}</td>
                     <td className="flex gap-2 px-3 py-2.5">
+                      <button
+                        className="text-success hover:opacity-70 disabled:opacity-30"
+                        aria-label="Add Payment"
+                        title="Add Payment"
+                        disabled={balanceOf(s) <= 0}
+                        onClick={() => {
+                          setPayFor(s);
+                          setPayForm({ amount: "", method: s.paymentMethod || "Cash", note: "" });
+                        }}
+                      >
+                        <Wallet className="h-4 w-4" />
+                      </button>
                       <button
                         className="text-info hover:opacity-70"
                         aria-label="Receipt"
