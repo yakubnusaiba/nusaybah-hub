@@ -75,7 +75,26 @@ function SalesPage() {
   const [open, setOpen] = useState(false);
   const [receipt, setReceipt] = useState<Sale | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
-  const [form, setForm] = useState({ productId: "", qty: "1", price: "", customerId: "" });
+  const [form, setForm] = useState({
+    productId: "",
+    qty: "1",
+    price: "",
+    customerId: "",
+    amountPaid: "",
+    paymentMethod: "Cash",
+  });
+
+  const [payFor, setPayFor] = useState<Sale | null>(null);
+  const [history, setHistory] = useState<SalePayment[]>([]);
+  const [payForm, setPayForm] = useState({ amount: "", method: "Cash", note: "" });
+  const [saving, setSaving] = useState(false);
+
+  const liveSale = payFor ? (sales.find((s) => s.id === payFor.id) ?? payFor) : null;
+
+  useEffect(() => {
+    if (!payFor) return;
+    void fetchSalePayments(payFor.id).then(setHistory);
+  }, [payFor, sales]);
 
   const filtered = useMemo(
     () =>
