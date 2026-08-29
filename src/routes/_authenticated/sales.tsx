@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, ImageDown, Plus, Printer, Receipt, Search, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import {
+  Download,
+  ImageDown,
+  Plus,
+  Printer,
+  Receipt,
+  Search,
+  Trash2,
+  Wallet,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
 import {
