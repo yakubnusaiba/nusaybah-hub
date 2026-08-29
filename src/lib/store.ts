@@ -390,3 +390,57 @@ export async function downloadNodeAsImage(node: HTMLElement, fileName: string) {
   link.href = dataUrl;
   link.click();
 }
+
+/* ------------------------------------------------------------------ */
+/* Installment payments                                                */
+/* ------------------------------------------------------------------ */
+
+export async function fetchSalePayments(saleId: string): Promise<SalePayment[]> {
+  const { data, error } = await supabase
+    .from("sale_payments")
+    .select("*")
+    .eq("sale_id", saleId)
+    .order("date", { ascending: true });
+  if (error) {
+    console.error("Failed to load payments", error);
+    return [];
+  }
+  return (data ?? []).map((r) => ({
+    id: str((r as Row)["id"]),
+    saleId: str((r as Row)["sale_id"]),
+    amount: num((r as Row)["amount"]),
+    method: str((r as Row)["method"]),
+    note: str((r as Row)["note"]),
+    date: str((r as Row)["date"]),
+  }));
+}
+
+export async function addSalePayment(
+  sale: Sale,
+  amount: number,
+  method: string,
+  note = "",
+): Promise<boolean> {
+  const { error } = await supabase.from("sale_payments").insert({
+    sale_id: sale.id,
+    amount,
+    method,
+    note,
+  });
+  if (error) {
+    console.error("Failed to record payment", error);
+    alert("Could not record this payment. You may not have permission.");
+    return false;
+  }
+  const nextPaid = Math.min(sale.total, (sale.amountPaid || 0) + amount);
+  const { error: updateError } = await supabase
+    .from("sales")
+    .update({ amount_paid: nextPaid })
+    .eq("id", sale.id);
+  if (updateError) {
+    console.error("Failed to update sale balance", updateError);
+    alert("Payment saved but the sale balance could not be updated.");
+  }
+  emitAll();
+  return true;
+}
