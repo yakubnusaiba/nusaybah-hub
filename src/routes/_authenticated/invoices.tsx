@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Eye, FilePlus2, Printer, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Eye, FilePlus2, ImageDown, Printer, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
 import {
@@ -18,6 +18,7 @@ import {
   formatDate,
   generateId,
   printHtml,
+  downloadNodeAsImage,
   useInvoices,
   useSales,
   useSettings,
@@ -49,6 +50,7 @@ function InvoicesPage() {
   const { value: sales } = useSales();
   const { value: settings } = useSettings();
   const [viewing, setViewing] = useState<Invoice | null>(null);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   const generate = () => {
     const lastSale = sales[sales.length - 1];
@@ -134,7 +136,7 @@ function InvoicesPage() {
       <Modal open={!!viewing} onClose={() => setViewing(null)} title="Invoice Preview" wide>
         {viewing && (
           <div className="space-y-4">
-            <div className="rounded-lg border border-border p-4 text-sm">
+            <div ref={invoiceRef} className="rounded-lg border border-border bg-card p-4 text-sm">
               <div className="flex flex-wrap justify-between gap-3 border-b border-border pb-3">
                 <div>
                   <h4 className="text-lg font-bold text-primary">{settings.storeName}</h4>
@@ -199,6 +201,15 @@ function InvoicesPage() {
                 }
               >
                 <Printer className="h-4 w-4" /> Print / Save PDF
+              </button>
+              <button
+                className={btnOutline}
+                onClick={() => {
+                  if (invoiceRef.current)
+                    void downloadNodeAsImage(invoiceRef.current, viewing.invoiceNumber);
+                }}
+              >
+                <ImageDown className="h-4 w-4" /> Download Image
               </button>
               <button className={btnOutline} onClick={() => setViewing(null)}>
                 Close
