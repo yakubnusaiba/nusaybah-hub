@@ -341,3 +341,16 @@ export function printHtml(title: string, inner: string) {
   w.focus();
   w.print();
 }
+
+export async function downloadNodeAsImage(node: HTMLElement, fileName: string) {
+  const { toPng } = await import("html-to-image");
+  const dataUrl = await toPng(node, {
+    pixelRatio: 2,
+    backgroundColor: "#ffffff",
+    cacheBust: true,
+  });
+  const link = document.createElement("a");
+  link.download = `${fileName}.png`;
+  link.href = dataUrl;
+  link.click();
+}

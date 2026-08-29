@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, Plus, Printer, Receipt, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Download, ImageDown, Plus, Printer, Receipt, Search, Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
 import {
@@ -20,6 +20,7 @@ import {
   formatDate,
   generateId,
   printHtml,
+  downloadNodeAsImage,
   useCustomers,
   useProducts,
   useSales,
@@ -57,6 +58,7 @@ function SalesPage() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [receipt, setReceipt] = useState<Sale | null>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({ productId: "", qty: "1", price: "", customerId: "" });
 
   const filtered = useMemo(
@@ -259,7 +261,10 @@ function SalesPage() {
       <Modal open={!!receipt} onClose={() => setReceipt(null)} title="Receipt">
         {receipt && (
           <div className="space-y-4">
-            <div className="rounded-lg border border-dashed border-border p-4 text-center text-sm">
+            <div
+              ref={receiptRef}
+              className="rounded-lg border border-dashed border-border bg-card p-4 text-center text-sm"
+            >
               <h4 className="text-lg font-bold text-primary">{settings.storeName}</h4>
               <p className="text-xs text-muted-foreground">{settings.address}</p>
               <p className="text-xs text-muted-foreground">📞 {settings.phone}</p>
@@ -301,6 +306,15 @@ function SalesPage() {
                 }
               >
                 <Printer className="h-4 w-4" /> Print
+              </button>
+              <button
+                className={btnOutline}
+                onClick={() => {
+                  if (receiptRef.current)
+                    void downloadNodeAsImage(receiptRef.current, receiptNumber(receipt));
+                }}
+              >
+                <ImageDown className="h-4 w-4" /> Download Image
               </button>
               <a
                 className={btnSuccess}

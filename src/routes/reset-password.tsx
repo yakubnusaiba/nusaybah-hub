@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { KeyRound, Loader2 } from "lucide-react";
+import { CheckCircle2, KeyRound, Loader2, LogIn } from "lucide-react";
+
 
 import logoUrl from "@/assets/logo.webp";
 import { btnGold, inputClass, labelClass } from "@/components/AppShell";
@@ -33,6 +34,7 @@ function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -59,9 +61,40 @@ function ResetPasswordPage() {
       setError(err.message);
       return;
     }
-    setMessage("Password updated. Redirecting…");
-    setTimeout(() => void navigate({ to: "/dashboard", replace: true }), 1200);
+    setMessage(null);
+    setDone(true);
   };
+
+  if (done) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-primary px-4 py-10">
+        <div className="w-full max-w-md rounded-2xl bg-card p-6 text-center shadow-xl sm:p-8">
+          <img
+            src={logoUrl}
+            alt="Nusaybah Hub logo"
+            className="mx-auto h-16 w-16 rounded-full border-2 border-gold/50 object-cover"
+          />
+          <CheckCircle2 className="mx-auto mt-5 h-14 w-14 text-success" />
+          <h1 className="mt-4 text-xl font-bold text-primary">Password updated</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your new password is active. You can sign in to your staff account right away.
+          </p>
+          <button
+            className={`${btnGold} mt-6 w-full justify-center`}
+            onClick={() => void navigate({ to: "/dashboard", replace: true })}
+          >
+            <LogIn className="h-4 w-4" /> Continue to dashboard
+          </button>
+          <a
+            href="/auth"
+            className="mt-4 inline-block text-sm font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            Back to sign in
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-primary px-4 py-10">
