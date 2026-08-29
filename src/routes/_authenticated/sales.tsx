@@ -24,17 +24,24 @@ import {
   labelClass,
 } from "@/components/AppShell";
 import {
+  PAYMENT_METHODS,
+  addSalePayment,
+  balanceOf,
   exportCSV,
+  fetchSalePayments,
   formatCurrency,
   formatDate,
   generateId,
+  paymentStatus,
   printHtml,
+  statusClasses,
   downloadNodeAsImage,
   useCustomers,
   useProducts,
   useSales,
   useSettings,
   type Sale,
+  type SalePayment,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/sales")({
