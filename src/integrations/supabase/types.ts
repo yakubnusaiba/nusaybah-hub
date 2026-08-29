@@ -128,13 +128,56 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          id: string
+          method: string
+          note: string
+          recorded_by: string | null
+          sale_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          method?: string
+          note?: string
+          recorded_by?: string | null
+          sale_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          method?: string
+          note?: string
+          recorded_by?: string | null
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales: {
         Row: {
+          amount_paid: number
           created_at: string
           customer_id: string | null
           customer_name: string
           date: string
           id: string
+          payment_method: string
           price: number
           product_id: string | null
           product_name: string
@@ -143,11 +186,13 @@ export type Database = {
           total: number
         }
         Insert: {
+          amount_paid?: number
           created_at?: string
           customer_id?: string | null
           customer_name?: string
           date?: string
           id?: string
+          payment_method?: string
           price?: number
           product_id?: string | null
           product_name?: string
@@ -156,11 +201,13 @@ export type Database = {
           total?: number
         }
         Update: {
+          amount_paid?: number
           created_at?: string
           customer_id?: string | null
           customer_name?: string
           date?: string
           id?: string
+          payment_method?: string
           price?: number
           product_id?: string | null
           product_name?: string
