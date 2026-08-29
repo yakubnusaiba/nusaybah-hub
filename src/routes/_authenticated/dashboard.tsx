@@ -52,6 +52,7 @@ function Dashboard() {
     .filter((s) => new Date(s.date).toDateString() === todayKey)
     .reduce((sum, s) => sum + s.total, 0);
   const lowStock = products.filter((p) => p.qty <= p.lowStock);
+  const outstanding = sales.reduce((sum, s) => sum + balanceOf(s), 0);
 
   const chart = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => {
