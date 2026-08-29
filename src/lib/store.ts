@@ -26,10 +26,42 @@ export type Sale = {
   qty: number;
   price: number;
   total: number;
+  amountPaid: number;
+  paymentMethod: string;
   customerId: string;
   customerName: string;
   date: string;
 };
+
+export type SalePayment = {
+  id: string;
+  saleId: string;
+  amount: number;
+  method: string;
+  note: string;
+  date: string;
+};
+
+export type PaymentStatus = "Fully Paid" | "Partially Paid" | "Unpaid";
+
+export const PAYMENT_METHODS = ["Cash", "Transfer", "POS", "Mobile Money", "Credit"] as const;
+
+export function balanceOf(sale: Sale) {
+  return Math.max(0, (sale.total || 0) - (sale.amountPaid || 0));
+}
+
+export function paymentStatus(sale: Sale): PaymentStatus {
+  const paid = sale.amountPaid || 0;
+  if (paid <= 0) return "Unpaid";
+  if (paid >= (sale.total || 0)) return "Fully Paid";
+  return "Partially Paid";
+}
+
+export function statusClasses(status: PaymentStatus) {
+  if (status === "Fully Paid") return "bg-success/15 text-success border-success/40";
+  if (status === "Partially Paid") return "bg-warning/15 text-warning border-warning/40";
+  return "bg-destructive/15 text-destructive border-destructive/40";
+}
 
 export type Invoice = {
   id: string;
