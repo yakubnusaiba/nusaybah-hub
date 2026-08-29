@@ -118,6 +118,8 @@ function SalesPage() {
     }
     const price = Number(form.price) || product.price;
     const customer = customers.find((c) => c.id === form.customerId);
+    const total = price * qty;
+    const paid = Math.min(total, Math.max(0, Number(form.amountPaid) || 0));
 
     saveProducts(products.map((p) => (p.id === product.id ? { ...p, qty: p.qty - qty } : p)));
     save([
@@ -128,14 +130,39 @@ function SalesPage() {
         productName: product.name,
         qty,
         price,
-        total: price * qty,
+        total,
+        amountPaid: paid,
+        paymentMethod: form.paymentMethod,
         customerId: form.customerId,
         customerName: customer ? customer.name : "Walk-in",
         date: new Date().toISOString(),
       },
     ]);
-    setForm({ productId: "", qty: "1", price: "", customerId: "" });
+    setForm({
+      productId: "",
+      qty: "1",
+      price: "",
+      customerId: "",
+      amountPaid: "",
+      paymentMethod: "Cash",
+    });
     setOpen(false);
+  };
+
+  const submitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!liveSale) return;
+    const amount = Number(payForm.amount);
+    if (!amount || amount <= 0) return;
+    const due = balanceOf(liveSale);
+    if (amount > due) {
+      alert(`Balance remaining is only ₦${formatCurrency(due)}.`);
+      return;
+    }
+    setSaving(true);
+    const ok = await addSalePayment(liveSale, amount, payForm.method, payForm.note);
+    setSaving(false);
+    if (ok) setPayForm({ amount: "", method: payForm.method, note: "" });
   };
 
   const receiptNumber = (sale: Sale) =>
