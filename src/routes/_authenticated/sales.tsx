@@ -519,6 +519,15 @@ function SalesPage() {
               <p className="mt-3 text-base font-bold text-primary">
                 Total: ₦{formatCurrency(receipt.total)}
               </p>
+              <p className="text-sm">Paid: ₦{formatCurrency(receipt.amountPaid)}</p>
+              <p className="text-sm font-semibold">
+                Balance: ₦{formatCurrency(balanceOf(receipt))}
+              </p>
+              <span
+                className={`mt-2 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(paymentStatus(receipt))}`}
+              >
+                {paymentStatus(receipt)}
+              </span>
               <p className="mt-3 text-xs italic text-gold">
                 Thank you for patronizing with us — it means the world to serve you
               </p>
