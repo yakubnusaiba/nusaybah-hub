@@ -88,6 +88,12 @@ function Dashboard() {
       icon: CalendarDays,
       color: "border-l-gold",
     },
+    {
+      label: "Outstanding (₦)",
+      value: formatCurrency(outstanding),
+      icon: Wallet,
+      color: "border-l-destructive",
+    },
   ];
 
   return (
