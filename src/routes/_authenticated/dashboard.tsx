@@ -12,8 +12,11 @@ import { useMemo } from "react";
 
 import { AppShell, Card, EmptyState } from "@/components/AppShell";
 import {
+  balanceOf,
   formatCurrency,
   formatDate,
+  paymentStatus,
+  statusClasses,
   useCustomers,
   useProducts,
   useSales,
@@ -49,6 +52,7 @@ function Dashboard() {
     .filter((s) => new Date(s.date).toDateString() === todayKey)
     .reduce((sum, s) => sum + s.total, 0);
   const lowStock = products.filter((p) => p.qty <= p.lowStock);
+  const outstanding = sales.reduce((sum, s) => sum + balanceOf(s), 0);
 
   const chart = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => {
@@ -84,6 +88,12 @@ function Dashboard() {
       value: formatCurrency(todaySales),
       icon: CalendarDays,
       color: "border-l-gold",
+    },
+    {
+      label: "Outstanding (₦)",
+      value: formatCurrency(outstanding),
+      icon: Wallet,
+      color: "border-l-destructive",
     },
   ];
 
@@ -152,6 +162,12 @@ function Dashboard() {
                     <p className="text-xs text-muted-foreground">
                       {s.customerName} · {formatDate(s.date)}
                     </p>
+                    <span
+                      className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[0.65rem] font-semibold ${statusClasses(paymentStatus(s))}`}
+                    >
+                      {paymentStatus(s)}
+                      {balanceOf(s) > 0 ? ` · ₦${formatCurrency(balanceOf(s))} left` : ""}
+                    </span>
                   </div>
                   <span className="font-semibold text-primary">₦{formatCurrency(s.total)}</span>
                 </li>

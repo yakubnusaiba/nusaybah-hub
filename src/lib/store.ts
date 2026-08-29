@@ -26,10 +26,42 @@ export type Sale = {
   qty: number;
   price: number;
   total: number;
+  amountPaid: number;
+  paymentMethod: string;
   customerId: string;
   customerName: string;
   date: string;
 };
+
+export type SalePayment = {
+  id: string;
+  saleId: string;
+  amount: number;
+  method: string;
+  note: string;
+  date: string;
+};
+
+export type PaymentStatus = "Fully Paid" | "Partially Paid" | "Unpaid";
+
+export const PAYMENT_METHODS = ["Cash", "Transfer", "POS", "Mobile Money", "Credit"] as const;
+
+export function balanceOf(sale: Sale) {
+  return Math.max(0, (sale.total || 0) - (sale.amountPaid || 0));
+}
+
+export function paymentStatus(sale: Sale): PaymentStatus {
+  const paid = sale.amountPaid || 0;
+  if (paid <= 0) return "Unpaid";
+  if (paid >= (sale.total || 0)) return "Fully Paid";
+  return "Partially Paid";
+}
+
+export function statusClasses(status: PaymentStatus) {
+  if (status === "Fully Paid") return "bg-success/15 text-success border-success/40";
+  if (status === "Partially Paid") return "bg-warning/15 text-warning border-warning/40";
+  return "bg-destructive/15 text-destructive border-destructive/40";
+}
 
 export type Invoice = {
   id: string;
@@ -219,6 +251,8 @@ export function useSales() {
       qty: num(r["qty"]),
       price: num(r["price"]),
       total: num(r["total"]),
+      amountPaid: num(r["amount_paid"]),
+      paymentMethod: str(r["payment_method"]) || "Cash",
       customerId: str(r["customer_id"]),
       customerName: str(r["customer_name"]),
       date: str(r["date"]),
@@ -230,6 +264,8 @@ export function useSales() {
       qty: s.qty,
       price: s.price,
       total: s.total,
+      amount_paid: s.amountPaid,
+      payment_method: s.paymentMethod,
       customer_id: s.customerId || null,
       customer_name: s.customerName,
       date: s.date,
@@ -353,4 +389,58 @@ export async function downloadNodeAsImage(node: HTMLElement, fileName: string) {
   link.download = `${fileName}.png`;
   link.href = dataUrl;
   link.click();
+}
+
+/* ------------------------------------------------------------------ */
+/* Installment payments                                                */
+/* ------------------------------------------------------------------ */
+
+export async function fetchSalePayments(saleId: string): Promise<SalePayment[]> {
+  const { data, error } = await supabase
+    .from("sale_payments")
+    .select("*")
+    .eq("sale_id", saleId)
+    .order("date", { ascending: true });
+  if (error) {
+    console.error("Failed to load payments", error);
+    return [];
+  }
+  return (data ?? []).map((r) => ({
+    id: str((r as Row)["id"]),
+    saleId: str((r as Row)["sale_id"]),
+    amount: num((r as Row)["amount"]),
+    method: str((r as Row)["method"]),
+    note: str((r as Row)["note"]),
+    date: str((r as Row)["date"]),
+  }));
+}
+
+export async function addSalePayment(
+  sale: Sale,
+  amount: number,
+  method: string,
+  note = "",
+): Promise<boolean> {
+  const { error } = await supabase.from("sale_payments").insert({
+    sale_id: sale.id,
+    amount,
+    method,
+    note,
+  });
+  if (error) {
+    console.error("Failed to record payment", error);
+    alert("Could not record this payment. You may not have permission.");
+    return false;
+  }
+  const nextPaid = Math.min(sale.total, (sale.amountPaid || 0) + amount);
+  const { error: updateError } = await supabase
+    .from("sales")
+    .update({ amount_paid: nextPaid })
+    .eq("id", sale.id);
+  if (updateError) {
+    console.error("Failed to update sale balance", updateError);
+    alert("Payment saved but the sale balance could not be updated.");
+  }
+  emitAll();
+  return true;
 }
