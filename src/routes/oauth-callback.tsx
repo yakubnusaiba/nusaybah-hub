@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { enforceApproval } from "@/lib/auth";
 
 export const Route = createFileRoute("/oauth-callback")({
   ssr: false,
@@ -23,16 +24,21 @@ function OAuthCallback() {
 
   useEffect(() => {
     let done = false;
-    const go = () => {
+    const go = async () => {
       if (done) return;
       done = true;
+      const blocked = await enforceApproval();
+      if (blocked) {
+        setError(blocked);
+        return;
+      }
       void navigate({ to: "/dashboard", replace: true });
     };
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) go();
+      if (data.session) void go();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) go();
+      if (session) void go();
     });
     const timer = setTimeout(() => {
       if (!done) setError("Sign in did not complete. Please try again.");

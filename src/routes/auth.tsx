@@ -5,6 +5,7 @@ import { KeyRound, Loader2, LogIn, UserPlus } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
 import { btnGold, btnOutline, inputClass, labelClass } from "@/components/AppShell";
 import { lovable } from "@/integrations/lovable/index";
+import { enforceApproval } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -79,6 +80,7 @@ function AuthPage() {
       if (err) setError(err.message);
       else if (!data.session)
         setMessage("Account created. Check your email to confirm, then sign in.");
+      else setMessage("Account created. An admin must approve your account before you can sign in.");
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) setError(err.message);
