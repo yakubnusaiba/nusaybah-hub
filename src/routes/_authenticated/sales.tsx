@@ -571,12 +571,15 @@ function SalesPage() {
                 onClick={() =>
                   printHtml(
                     "Receipt",
-                    `<h2>${settings.storeName}</h2><p>${settings.address}<br/>${settings.phone}</p>
-                     <p><strong>${receiptNumber(receipt)}</strong> · ${formatDate(receipt.date)}</p>
-                     <table><thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
-                     <tbody><tr><td>${receipt.productName}</td><td>${receipt.qty}</td><td>₦${formatCurrency(receipt.total)}</td></tr></tbody></table>
+                    `<div style="text-align:center"><img src="${new URL(logoUrl, window.location.origin).href}" style="width:90px;height:90px;border-radius:50%;object-fit:cover"/>
+                     <h2 style="margin:8px 0 0">${settings.storeName}</h2>
+                     <p style="margin:4px 0">${settings.address}<br/>📞 ${settings.phone}</p></div>
+                     <p><strong>Receipt:</strong> ${receiptNumber(receipt)} &nbsp;·&nbsp; <strong>Customer:</strong> ${receipt.customerName}<br/><strong>Date:</strong> ${formatDate(receipt.date)}</p>
+                     <table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                     <tbody><tr><td>${receipt.productName}</td><td>${receipt.qty}</td><td>₦${formatCurrency(receipt.qty > 0 ? receipt.total / receipt.qty : receipt.total)}</td><td>₦${formatCurrency(receipt.total)}</td></tr></tbody></table>
                      <p class="total">Total: ₦${formatCurrency(receipt.total)}</p>
-                     <p class="thankyou">Thank you for patronizing with us!</p>`,
+                     ${balanceOf(receipt) > 0 ? `<p style="text-align:right">Paid: ₦${formatCurrency(receipt.amountPaid)} · Balance: ₦${formatCurrency(balanceOf(receipt))} (${paymentStatus(receipt)})</p>` : ""}
+                     <p class="thankyou">Thank you for patronizing with us — it means the world to serve you</p>`,
                   )
                 }
               >

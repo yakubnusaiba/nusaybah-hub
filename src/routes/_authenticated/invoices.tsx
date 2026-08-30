@@ -193,7 +193,8 @@ function InvoicesPage() {
                 onClick={() =>
                   printHtml(
                     viewing.invoiceNumber,
-                    `<h2>${settings.storeName}</h2><p>${settings.address}<br/>${settings.phone}</p>
+                    `<div style="display:flex;align-items:center;gap:12px"><img src="${new URL(logoUrl, window.location.origin).href}" style="width:70px;height:70px;border-radius:50%;object-fit:cover"/>
+                     <div><h2>${settings.storeName}</h2><p style="margin:4px 0">${settings.address}<br/>📞 ${settings.phone}</p></div></div>
                      <p><strong>${viewing.invoiceNumber}</strong> · ${formatDate(viewing.date)}<br/>Customer: ${viewing.customer}</p>
                      <table><thead><tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>
                      ${viewing.items
