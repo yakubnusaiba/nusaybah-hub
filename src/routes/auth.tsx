@@ -5,6 +5,7 @@ import { KeyRound, Loader2, LogIn, UserPlus } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
 import { btnGold, btnOutline, inputClass, labelClass } from "@/components/AppShell";
 import { lovable } from "@/integrations/lovable/index";
+import { enforceApproval } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -39,11 +40,19 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: "/dashboard", replace: true });
-    });
+    const handle = async (hasSession: boolean) => {
+      if (!hasSession) return;
+      const blocked = await enforceApproval();
+      if (blocked) {
+        setError(blocked);
+        setBusy(false);
+        return;
+      }
+      void navigate({ to: "/dashboard", replace: true });
+    };
+    void supabase.auth.getSession().then(({ data }) => void handle(!!data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) void navigate({ to: "/dashboard", replace: true });
+      void handle(!!session);
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
@@ -71,6 +80,7 @@ function AuthPage() {
       if (err) setError(err.message);
       else if (!data.session)
         setMessage("Account created. Check your email to confirm, then sign in.");
+      else setMessage("Account created. An admin must approve your account before you can sign in.");
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) setError(err.message);
@@ -231,8 +241,8 @@ function AuthPage() {
           </button>
         </p>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          The first account created becomes the Admin. New accounts join as Staff until an admin
-          upgrades them.
+          The first account created becomes the Admin. New accounts join as Staff and stay pending
+          until an admin approves them.
         </p>
 
       </div>

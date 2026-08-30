@@ -84,3 +84,23 @@ export function useAuth() {
     canDelete: role === "admin" || role === "manager",
   } as const;
 }
+
+export const APPROVAL_MESSAGE = {
+  pending: "Your account is waiting for admin approval. Please wait.",
+  rejected: "Your account has been rejected. Please contact the admin.",
+} as const;
+
+/**
+ * Returns null when the signed-in account is approved. Otherwise signs the user
+ * back out and returns the message to show on the sign-in screen.
+ */
+export async function enforceApproval(): Promise<string | null> {
+  const { data, error } = await (
+    supabase.rpc as unknown as (fn: string) => Promise<{ data: string | null; error: unknown }>
+  )("my_status");
+  if (error) return null;
+  const status = data ?? "approved";
+  if (status === "approved") return null;
+  await supabase.auth.signOut();
+  return status === "rejected" ? APPROVAL_MESSAGE.rejected : APPROVAL_MESSAGE.pending;
+}
