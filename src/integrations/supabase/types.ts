@@ -111,6 +111,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+          status: string
         }
         Insert: {
           created_at?: string
@@ -118,6 +119,7 @@ export type Database = {
           full_name?: string
           id: string
           phone?: string
+          status?: string
         }
         Update: {
           created_at?: string
@@ -125,6 +127,7 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string
+          status?: string
         }
         Relationships: []
       }
@@ -278,6 +281,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      my_status: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "manager" | "staff"
