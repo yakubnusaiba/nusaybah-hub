@@ -39,11 +39,19 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: "/dashboard", replace: true });
-    });
+    const handle = async (hasSession: boolean) => {
+      if (!hasSession) return;
+      const blocked = await enforceApproval();
+      if (blocked) {
+        setError(blocked);
+        setBusy(false);
+        return;
+      }
+      void navigate({ to: "/dashboard", replace: true });
+    };
+    void supabase.auth.getSession().then(({ data }) => void handle(!!data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) void navigate({ to: "/dashboard", replace: true });
+      void handle(!!session);
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
