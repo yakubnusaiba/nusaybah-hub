@@ -241,8 +241,8 @@ function AuthPage() {
           </button>
         </p>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          The first account created becomes the Admin. New accounts join as Staff until an admin
-          upgrades them.
+          The first account created becomes the Admin. New accounts join as Staff and stay pending
+          until an admin approves them.
         </p>
 
       </div>
