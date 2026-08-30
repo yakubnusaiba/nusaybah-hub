@@ -3,6 +3,7 @@ import { Eye, FilePlus2, ImageDown, Printer, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
+import logoUrl from "@/assets/logo.webp";
 import {
   AppShell,
   Card,
@@ -137,11 +138,18 @@ function InvoicesPage() {
         {viewing && (
           <div className="space-y-4">
             <div ref={invoiceRef} className="rounded-lg border border-border bg-card p-4 text-sm">
-              <div className="flex flex-wrap justify-between gap-3 border-b border-border pb-3">
-                <div>
-                  <h4 className="text-lg font-bold text-primary">{settings.storeName}</h4>
-                  <p className="text-xs text-muted-foreground">{settings.address}</p>
-                  <p className="text-xs text-muted-foreground">📞 {settings.phone}</p>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={logoUrl}
+                    alt={settings.storeName}
+                    className="h-16 w-16 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="text-lg font-bold text-primary">{settings.storeName}</h4>
+                    <p className="text-xs text-muted-foreground">{settings.address}</p>
+                    <p className="text-xs text-muted-foreground">📞 {settings.phone}</p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="font-bold tracking-widest text-gold">INVOICE</p>
