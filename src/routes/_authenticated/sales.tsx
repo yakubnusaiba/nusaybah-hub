@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
+import logoUrl from "@/assets/logo.webp";
 import {
   AppShell,
   Card,
