@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
+import logoUrl from "@/assets/logo.webp";
 import {
   AppShell,
   Card,
@@ -496,39 +497,71 @@ function SalesPage() {
           <div className="space-y-4">
             <div
               ref={receiptRef}
-              className="rounded-lg border border-dashed border-border bg-card p-4 text-center text-sm"
+              className="mx-auto max-w-sm rounded-lg bg-white p-6 text-center text-sm text-gray-800"
             >
-              <h4 className="text-lg font-bold text-primary">{settings.storeName}</h4>
-              <p className="text-xs text-muted-foreground">{settings.address}</p>
-              <p className="text-xs text-muted-foreground">📞 {settings.phone}</p>
-              <p className="my-3 text-xs font-semibold tracking-widest text-gold">
-                {receiptNumber(receipt)} • {formatDate(receipt.date)}
-              </p>
-              <div className="border-y border-border py-3 text-left">
-                <div className="flex justify-between">
-                  <span>
-                    {receipt.productName} × {receipt.qty}
-                  </span>
-                  <span>₦{formatCurrency(receipt.total)}</span>
-                </div>
-                <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                  <span>Customer</span>
-                  <span>{receipt.customerName}</span>
-                </div>
+              <img
+                src={logoUrl}
+                alt={settings.storeName}
+                className="mx-auto h-20 w-20 rounded-full object-cover"
+              />
+              <h4 className="mt-3 text-2xl font-extrabold text-gray-900">
+                {settings.storeName}
+              </h4>
+              <p className="text-sm text-gray-600">{settings.address}</p>
+              <p className="text-sm text-gray-600">📞 {settings.phone}</p>
+              <div className="mt-4 flex flex-wrap justify-between gap-y-1 text-left text-sm">
+                <span>
+                  <strong>Receipt:</strong> {receiptNumber(receipt)}
+                </span>
+                <span>
+                  <strong>Customer:</strong> {receipt.customerName}
+                </span>
+                <span>
+                  <strong>Date:</strong> {formatDate(receipt.date)}
+                </span>
               </div>
-              <p className="mt-3 text-base font-bold text-primary">
+              <table className="mt-4 w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-3 py-2">Item</th>
+                    <th className="border border-gray-300 px-3 py-2">Qty</th>
+                    <th className="border border-gray-300 px-3 py-2">Price</th>
+                    <th className="border border-gray-300 px-3 py-2">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-300 px-3 py-2">
+                      {receipt.productName}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2">{receipt.qty}</td>
+                    <td className="border border-gray-300 px-3 py-2">
+                      ₦{formatCurrency(receipt.qty > 0 ? receipt.total / receipt.qty : receipt.total)}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2">
+                      ₦{formatCurrency(receipt.total)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="mt-4 text-right text-2xl font-extrabold text-gray-900">
                 Total: ₦{formatCurrency(receipt.total)}
               </p>
-              <p className="text-sm">Paid: ₦{formatCurrency(receipt.amountPaid)}</p>
-              <p className="text-sm font-semibold">
-                Balance: ₦{formatCurrency(balanceOf(receipt))}
-              </p>
-              <span
-                className={`mt-2 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(paymentStatus(receipt))}`}
-              >
-                {paymentStatus(receipt)}
-              </span>
-              <p className="mt-3 text-xs italic text-gold">
+              {balanceOf(receipt) > 0 || receipt.amountPaid < receipt.total ? (
+                <div className="mt-2 text-right text-sm">
+                  <p>Paid: ₦{formatCurrency(receipt.amountPaid)}</p>
+                  <p className="font-semibold">
+                    Balance: ₦{formatCurrency(balanceOf(receipt))}
+                  </p>
+                  <span
+                    className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(paymentStatus(receipt))}`}
+                  >
+                    {paymentStatus(receipt)}
+                  </span>
+                </div>
+              ) : null}
+              <hr className="my-4 border-gray-200" />
+              <p className="text-sm italic text-gray-700">
                 Thank you for patronizing with us — it means the world to serve you
               </p>
             </div>
@@ -538,12 +571,15 @@ function SalesPage() {
                 onClick={() =>
                   printHtml(
                     "Receipt",
-                    `<h2>${settings.storeName}</h2><p>${settings.address}<br/>${settings.phone}</p>
-                     <p><strong>${receiptNumber(receipt)}</strong> · ${formatDate(receipt.date)}</p>
-                     <table><thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
-                     <tbody><tr><td>${receipt.productName}</td><td>${receipt.qty}</td><td>₦${formatCurrency(receipt.total)}</td></tr></tbody></table>
+                    `<div style="text-align:center"><img src="${new URL(logoUrl, window.location.origin).href}" style="width:90px;height:90px;border-radius:50%;object-fit:cover"/>
+                     <h2 style="margin:8px 0 0">${settings.storeName}</h2>
+                     <p style="margin:4px 0">${settings.address}<br/>📞 ${settings.phone}</p></div>
+                     <p><strong>Receipt:</strong> ${receiptNumber(receipt)} &nbsp;·&nbsp; <strong>Customer:</strong> ${receipt.customerName}<br/><strong>Date:</strong> ${formatDate(receipt.date)}</p>
+                     <table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                     <tbody><tr><td>${receipt.productName}</td><td>${receipt.qty}</td><td>₦${formatCurrency(receipt.qty > 0 ? receipt.total / receipt.qty : receipt.total)}</td><td>₦${formatCurrency(receipt.total)}</td></tr></tbody></table>
                      <p class="total">Total: ₦${formatCurrency(receipt.total)}</p>
-                     <p class="thankyou">Thank you for patronizing with us!</p>`,
+                     ${balanceOf(receipt) > 0 ? `<p style="text-align:right">Paid: ₦${formatCurrency(receipt.amountPaid)} · Balance: ₦${formatCurrency(balanceOf(receipt))} (${paymentStatus(receipt)})</p>` : ""}
+                     <p class="thankyou">Thank you for patronizing with us — it means the world to serve you</p>`,
                   )
                 }
               >
