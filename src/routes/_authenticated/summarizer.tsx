@@ -6,6 +6,8 @@ import { useState } from "react";
 import { AppShell, Card, btnGold, btnOutline, inputClass, labelClass } from "@/components/AppShell";
 import { summarizeText, type SummaryLength, type SummaryResult } from "@/lib/summarize.functions";
 
+import { countWords, MAX_SUMMARY_INPUT, summaryInputSchema } from "@/lib/summarize";
+
 export const Route = createFileRoute("/_authenticated/summarizer")({
   head: () => ({
     meta: [
@@ -18,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/summarizer")({
       { property: "og:title", content: "AI Text Summarizer — Nusaybah Hub" },
       {
         property: "og:description",
-        content: "Turn long messages, notes or supplier emails into a short summary with key points.",
+        content:
+          "Turn long messages, notes or supplier emails into a short summary with key points.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -33,8 +36,6 @@ const LENGTHS: { value: SummaryLength; label: string; hint: string }[] = [
   { value: "long", label: "Long", hint: "5–8 sentences" },
 ];
 
-const countWords = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
-
 function SummarizerPage() {
   const run = useServerFn(summarizeText);
   const [text, setText] = useState("");
@@ -42,22 +43,27 @@ function SummarizerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<SummaryResult | null>(null);
+  const [originalWords, setOriginalWords] = useState(0);
   const [copied, setCopied] = useState(false);
 
   const plainText = result
-    ? `Summary:\n${result.summary}\n\nKey Points:\n${result.keyPoints.map((p) => `• ${p}`).join("\n")}\n\nOriginal: ${countWords(text)} words | Summary: ${countWords(result.summary)} words`
+    ? `Summary:\n${result.summary}\n\nKey Points:\n${result.keyPoints.map((p) => `• ${p}`).join("\n")}\n\nOriginal: ${originalWords} words | Summary: ${countWords(result.summary)} words`
     : "";
 
   async function onSummarize() {
+    if (loading) return;
     setError("");
-    setResult(null);
-    if (countWords(text) < 5) {
-      setError("Please paste a bit more text to summarize.");
+    setCopied(false);
+    const input = summaryInputSchema.safeParse({ text, length });
+    if (!input.success) {
+      setError(input.error.issues[0]?.message || "Please check your text.");
       return;
     }
+    setResult(null);
     setLoading(true);
     try {
-      const res = await run({ data: { text, length } });
+      const res = await run({ data: input.data });
+      setOriginalWords(countWords(input.data.text));
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -67,9 +73,13 @@ function SummarizerPage() {
   }
 
   async function onCopy() {
-    await navigator.clipboard.writeText(plainText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(plainText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Could not copy the summary. Please download it instead.");
+    }
   }
 
   function onDownload() {
@@ -94,12 +104,16 @@ function SummarizerPage() {
               <textarea
                 id="summarizerInput"
                 rows={10}
+                maxLength={MAX_SUMMARY_INPUT}
+                disabled={loading}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Paste a message, note, article or supplier email here…"
                 className={`${inputClass} resize-y`}
               />
-              <p className="mt-1 text-xs text-muted-foreground">{countWords(text)} words</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {countWords(text)} words · {text.length.toLocaleString()} / 30,000 characters
+              </p>
             </div>
 
             <div className="flex flex-wrap items-end gap-3">
@@ -109,6 +123,8 @@ function SummarizerPage() {
                   {LENGTHS.map((opt) => (
                     <button
                       key={opt.value}
+                      disabled={loading}
+                      aria-pressed={length === opt.value}
                       type="button"
                       onClick={() => setLength(opt.value)}
                       className={
@@ -142,7 +158,12 @@ function SummarizerPage() {
             </div>
 
             {error ? (
-              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+              <p
+                role="alert"
+                className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {error}
+              </p>
             ) : null}
           </div>
         </Card>
@@ -151,7 +172,9 @@ function SummarizerPage() {
           <Card>
             <div className="space-y-5 p-5">
               <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Summary</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
+                  Summary
+                </h2>
                 <p className="mt-2 whitespace-pre-wrap leading-relaxed">{result.summary}</p>
               </div>
 
@@ -169,7 +192,8 @@ function SummarizerPage() {
               ) : null}
 
               <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                Original: {countWords(text)} words &nbsp;|&nbsp; Summary: {countWords(result.summary)} words
+                Original: {originalWords} words &nbsp;|&nbsp; Summary: {countWords(result.summary)}{" "}
+                words
               </p>
 
               <div className="flex flex-wrap gap-2">
