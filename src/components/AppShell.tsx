@@ -11,7 +11,9 @@ import {
   Moon,
   Settings as SettingsIcon,
   ShoppingCart,
+  Sparkles,
   Sun,
+
   Users,
   Wrench,
   X,
