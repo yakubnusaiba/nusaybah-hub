@@ -1,79 +1,129 @@
-import { createServerFn } from "@tanstack/react-start";
+// ============================================================
+// SMART TEXT SUMMARIZER (No API Key Needed)
+// ============================================================
 
 export type SummaryLength = "short" | "medium" | "long";
 
 export type SummaryResult = {
   summary: string;
+  originalWordCount: number;
+  summaryWordCount: number;
   keyPoints: string[];
+  reductionPercentage: number;
 };
 
-const LENGTH_GUIDE: Record<SummaryLength, string> = {
-  short: "1-2 sentences",
-  medium: "3-5 sentences",
-  long: "5-8 sentences",
-};
-
-export const summarizeText = createServerFn({ method: "POST" })
-  .inputValidator((input: { text: string; length: SummaryLength }) => {
-    const text = typeof input?.text === "string" ? input.text.trim() : "";
-    if (text.length < 20) throw new Error("Please enter at least a couple of sentences to summarize.");
-    if (text.length > 30000) throw new Error("That text is too long. Please shorten it a little.");
-    const length: SummaryLength =
-      input.length === "short" || input.length === "medium" || input.length === "long"
-        ? input.length
-        : "medium";
-    return { text, length };
-  })
-  .handler(async ({ data }): Promise<SummaryResult> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("The AI service is not configured yet.");
-
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.8-flash",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You summarize text accurately and never invent facts. Reply with JSON only, no markdown fences.",
-          },
-          {
-            role: "user",
-            content: `Summarize the text below in ${LENGTH_GUIDE[data.length]}, then list 3 to 5 short key points.\n\nReturn JSON shaped exactly like {"summary": "...", "keyPoints": ["...", "..."]}.\n\nTEXT:\n${data.text}`,
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (res.status === 429) throw new Error("The summarizer is busy right now. Please try again in a moment.");
-    if (res.status === 402) throw new Error("The AI credits for this workspace have run out.");
-    if (!res.ok) throw new Error(`Summarizing failed (${res.status}). Please try again.`);
-
-    const payload = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
+export function summarizeText(
+  text: string,
+  length: SummaryLength = "medium"
+): SummaryResult {
+  if (!text || text.trim().length === 0) {
+    return {
+      summary: "",
+      originalWordCount: 0,
+      summaryWordCount: 0,
+      keyPoints: [],
+      reductionPercentage: 0,
     };
-    const raw = payload.choices?.[0]?.message?.content?.trim() ?? "";
-    const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  }
 
-    let parsed: { summary?: unknown; keyPoints?: unknown } = {};
-    try {
-      parsed = JSON.parse(cleaned) as typeof parsed;
-    } catch {
-      return { summary: cleaned || "No summary was produced. Please try again.", keyPoints: [] };
-    }
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const originalWordCount = text.split(/\s+/).length;
 
-    const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
-    const keyPoints = Array.isArray(parsed.keyPoints)
-      ? parsed.keyPoints.filter((p): p is string => typeof p === "string" && p.trim().length > 0)
-      : [];
+  let maxSentences = 5;
+  if (length === "short") maxSentences = 3;
+  else if (length === "medium") maxSentences = 5;
+  else if (length === "long") maxSentences = 8;
 
-    if (!summary) throw new Error("No summary was produced. Please try again.");
-    return { summary, keyPoints };
+  if (sentences.length <= maxSentences) {
+    const summary = text;
+    const summaryWordCount = summary.split(/\s+/).length;
+    const keyPoints = extractKeyPoints(text);
+    return {
+      summary,
+      originalWordCount,
+      summaryWordCount,
+      keyPoints,
+      reductionPercentage: Math.round(
+        ((originalWordCount - summaryWordCount) / originalWordCount) * 100
+      ),
+    };
+  }
+
+  const scoredSentences = sentences.map((sentence, index) => {
+    const clean = sentence.trim();
+    const words = clean.split(/\s+/);
+    const wordCount = words.length;
+
+    // Position score (first sentences are more important)
+    const positionScore = 1 - index / sentences.length;
+
+    // Keyword score
+    const keywords = [
+      "important",
+      "significant",
+      "key",
+      "main",
+      "primary",
+      "essential",
+      "critical",
+      "major",
+      "fundamental",
+      "central",
+      "conclusion",
+      "therefore",
+      "thus",
+      "hence",
+      "consequently",
+    ];
+    let keywordScore = 0;
+    keywords.forEach((keyword) => {
+      if (clean.toLowerCase().includes(keyword)) {
+        keywordScore += 1;
+      }
+    });
+    // Normalize keyword score
+    keywordScore = Math.min(keywordScore / 3, 1);
+
+    // Length score (longer sentences tend to have more information)
+    const lengthScore = Math.min(wordCount / 20, 1);
+
+    const totalScore = positionScore * 0.5 + keywordScore * 0.3 + lengthScore * 0.2;
+
+    return {
+      sentence: clean,
+      score: totalScore,
+      wordCount,
+      originalIndex: index,
+    };
   });
+
+  scoredSentences.sort((a, b) => b.score - a.score);
+  const selected = scoredSentences.slice(0, maxSentences);
+  selected.sort((a, b) => a.originalIndex - b.originalIndex);
+
+  const summary = selected.map((s) => s.sentence).join(" ");
+  const summaryWordCount = summary.split(/\s+/).length;
+  const keyPoints = extractKeyPoints(text);
+
+  return {
+    summary,
+    originalWordCount,
+    summaryWordCount,
+    keyPoints,
+    reductionPercentage: Math.round(
+      ((originalWordCount - summaryWordCount) / originalWordCount) * 100
+    ),
+  };
+}
+
+function extractKeyPoints(text: string): string[] {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const numPoints = Math.min(3, sentences.length);
+  const points: string[] = [];
+  for (let i = 0; i < numPoints; i++) {
+    const sentence = sentences[i].trim();
+    const clean = sentence.replace(/^["']|["']$/g, "").trim();
+    points.push(clean.length > 100 ? clean.slice(0, 100) + "..." : clean);
+  }
+  return points;
+}
