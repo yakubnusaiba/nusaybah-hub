@@ -11,9 +11,7 @@ import {
   Moon,
   Settings as SettingsIcon,
   ShoppingCart,
-  Sparkles,
   Sun,
-
   Users,
   Wrench,
   X,
@@ -147,14 +145,6 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           <p className="px-2 pb-1 pt-4 text-[0.7rem] uppercase tracking-widest text-gold/70">
             Tools
           </p>
-          <Link
-            to="/summarizer"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-primary-foreground/80 transition-colors hover:bg-primary-foreground/10"
-            activeProps={{ className: "bg-gold/20 text-gold" }}
-          >
-            <Sparkles className="h-4 w-4" /> AI Summarizer
-          </Link>
           <a
             href="https://yakubnusaiba.github.io/-nusaybah-tools/"
             target="_blank"
