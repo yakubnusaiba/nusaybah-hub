@@ -64,6 +64,87 @@ function SummarizerPage() {
     ? `Summary:\n${result.summary}\n\nKey Points:\n${result.keyPoints.map((p) => `• ${p}`).join("\n")}\n\nOriginal: ${originalWords} words | Summary: ${countWords(result.summary)} words`
     : "";
 
+  function getHistory(): HistoryEntry[] {
+    try {
+      return JSON.parse(localStorage.getItem("nusaybah_summary_history") || "[]") || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveHistoryToStorage(newHistory: HistoryEntry[]) {
+    localStorage.setItem("nusaybah_summary_history", JSON.stringify(newHistory));
+  }
+
+  function saveSummaryToHistory(summaryText: string, originalSnippet: string) {
+    const current = getHistory();
+    const entry: HistoryEntry = {
+      id: Date.now(),
+      date: new Date().toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      summary: summaryText,
+      snippet: originalSnippet.substring(0, 120) + (originalSnippet.length > 120 ? "..." : ""),
+    };
+    current.unshift(entry);
+    if (current.length > 50) current.pop();
+    saveHistoryToStorage(current);
+    setHistory(current);
+  }
+
+  function loadHistory(index: number) {
+    const item = history[index];
+    if (!item) return;
+    setResult({ summary: item.summary, keyPoints: [] });
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  }
+
+  function deleteHistory(index: number) {
+    if (!confirm("Delete this saved summary?")) return;
+    const updated = [...history];
+    updated.splice(index, 1);
+    saveHistoryToStorage(updated);
+    setHistory(updated);
+  }
+
+  function clearHistory() {
+    if (!confirm("Delete ALL saved summaries?")) return;
+    saveHistoryToStorage([]);
+    setHistory([]);
+    alert("✅ History cleared!");
+  }
+
+  function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    const status = document.getElementById("fileStatus");
+    if (!file) {
+      setFileStatus("");
+      return;
+    }
+    if (file.size > 2000000) {
+      alert("⚠️ File is too large (max 2MB).");
+      event.target.value = "";
+      return;
+    }
+    setFileStatus("⏳ Loading...");
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const content = e.target?.result as string;
+      setText(content);
+      setFileStatus("✅ Loaded: " + file.name);
+    };
+    reader.onerror = function () {
+      setFileStatus("❌ Could not read file.");
+    };
+    reader.readAsText(file);
+  }
+
   async function onSummarize() {
     if (loading) return;
     setError("");
@@ -79,6 +160,7 @@ function SummarizerPage() {
       const res = await run({ data: input.data });
       setOriginalWords(countWords(input.data.text));
       setResult(res);
+      saveSummaryToHistory(res.summary, input.data.text);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
