@@ -122,7 +122,6 @@ function SummarizerPage() {
 
   function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    const status = document.getElementById("fileStatus");
     if (!file) {
       setFileStatus("");
       return;
