@@ -192,6 +192,42 @@ function SummarizerPage() {
       <div className="mx-auto max-w-3xl space-y-5">
         <Card>
           <div className="space-y-4 p-5">
+            <div style={{ marginBottom: "0.8rem" }}>
+              <label
+                style={{
+                  background: "#d4af37",
+                  color: "#0a2463",
+                  padding: "0.5rem 1.2rem",
+                  borderRadius: "20px",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <Upload className="h-4 w-4" /> Upload .txt File
+                <input
+                  type="file"
+                  accept=".txt,text/plain"
+                  onChange={handleFileUpload}
+                  style={{ display: "none" }}
+                />
+              </label>
+              <span
+                id="fileStatus"
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#6c757d",
+                  marginLeft: "0.8rem",
+                  fontStyle: "italic",
+                }}
+              >
+                {fileStatus}
+              </span>
+            </div>
+
             <div>
               <label className={labelClass} htmlFor="summarizerInput">
                 Text to summarize
