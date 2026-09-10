@@ -52,6 +52,13 @@ function SummarizerPage() {
   const [result, setResult] = useState<SummaryResult | null>(null);
   const [originalWords, setOriginalWords] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [fileStatus, setFileStatus] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
 
   const plainText = result
     ? `Summary:\n${result.summary}\n\nKey Points:\n${result.keyPoints.map((p) => `• ${p}`).join("\n")}\n\nOriginal: ${originalWords} words | Summary: ${countWords(result.summary)} words`
