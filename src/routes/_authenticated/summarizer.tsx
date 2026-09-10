@@ -299,46 +299,153 @@ function SummarizerPage() {
           </div>
         </Card>
 
-        {result ? (
-          <Card>
-            <div className="space-y-5 p-5">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
-                  Summary
-                </h2>
-                <p className="mt-2 whitespace-pre-wrap leading-relaxed">{result.summary}</p>
-              </div>
-
-              {result.keyPoints.length > 0 ? (
+        <div ref={resultRef}>
+          {result ? (
+            <Card>
+              <div className="space-y-5 p-5">
                 <div>
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
-                    Key points
+                    Summary
                   </h2>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 leading-relaxed">
-                    {result.keyPoints.map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
+                  <p className="mt-2 whitespace-pre-wrap leading-relaxed">{result.summary}</p>
                 </div>
-              ) : null}
 
-              <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                Original: {originalWords} words &nbsp;|&nbsp; Summary: {countWords(result.summary)}{" "}
-                words
-              </p>
+                {result.keyPoints.length > 0 ? (
+                  <div>
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
+                      Key points
+                    </h2>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 leading-relaxed">
+                      {result.keyPoints.map((point) => (
+                        <li key={point}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={onCopy} className={btnOutline}>
-                  {copied ? <Check className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
-                  {copied ? "Copied" : "Copy summary"}
-                </button>
-                <button type="button" onClick={onDownload} className={btnOutline}>
-                  <Download className="h-4 w-4" /> Download .txt
-                </button>
+                <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  Original: {originalWords} words &nbsp;|&nbsp; Summary: {countWords(result.summary)}{" "}
+                  words
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={onCopy} className={btnOutline}>
+                    {copied ? <Check className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
+                    {copied ? "Copied" : "Copy summary"}
+                  </button>
+                  <button type="button" onClick={onDownload} className={btnOutline}>
+                    <Download className="h-4 w-4" /> Download .txt
+                  </button>
+                </div>
               </div>
+            </Card>
+          ) : null}
+
+          <div
+            style={{
+              borderLeft: "4px solid #d4af37",
+              background: "#fff",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              marginTop: "1.5rem",
+              boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+            }}
+          >
+            <h3 style={{ color: "#0a2463", marginBottom: "0.5rem" }}>📜 Summary History</h3>
+            <p style={{ color: "#6c757d", marginBottom: "1rem", fontSize: "0.9rem" }}>
+              Your previously generated summaries are saved locally in your browser. Click any item
+              to reload it instantly.
+            </p>
+            <div style={{ maxHeight: "300px", overflowY: "auto", marginBottom: "1rem" }}>
+              {history.length === 0 ? (
+                <p style={{ color: "#6c757d" }}>
+                  No summaries saved yet. Generate one to get started!
+                </p>
+              ) : (
+                history.map((item, index) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: "#f9f9f9",
+                      padding: "0.8rem 1rem",
+                      borderRadius: "8px",
+                      marginBottom: "0.5rem",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderLeft: "3px solid #d4af37",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ flex: 1 }} onClick={() => loadHistory(index)}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: "0.9rem",
+                          color: "#0a2463",
+                        }}
+                      >
+                        📄 Summary #{history.length - index}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "#6c757d",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "400px",
+                        }}
+                      >
+                        {item.snippet || ""}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.7rem",
+                          color: "#6c757d",
+                          marginTop: "0.2rem",
+                        }}
+                      >
+                        {item.date}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteHistory(index);
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#dc3545",
+                        cursor: "pointer",
+                        padding: "0 0.4rem",
+                      }}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-          </Card>
-        ) : null}
+            <button
+              onClick={clearHistory}
+              style={{
+                background: "#dc3545",
+                color: "white",
+                border: "none",
+                padding: "0.5rem 1.2rem",
+                borderRadius: "50px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              <Trash2 className="h-4 w-4" style={{ display: "inline", marginRight: "4px" }} />{" "}
+              Clear All History
+            </button>
+          </div>
+        </div>
       </div>
     </AppShell>
   );
