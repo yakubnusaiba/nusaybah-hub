@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ClipboardCopy, Download, Loader2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Check, ClipboardCopy, Download, Loader2, Sparkles, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppShell, Card, btnGold, btnOutline, inputClass, labelClass } from "@/components/AppShell";
 import { summarizeText, type SummaryLength, type SummaryResult } from "@/lib/summarize.functions";
 
 import { countWords, MAX_SUMMARY_INPUT, summaryInputSchema } from "@/lib/summarize";
+
+type HistoryEntry = {
+  id: number;
+  date: string;
+  summary: string;
+  snippet: string;
+};
 
 export const Route = createFileRoute("/_authenticated/summarizer")({
   head: () => ({
