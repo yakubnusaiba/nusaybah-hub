@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Download, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import {
   AppShell,
@@ -203,9 +203,8 @@ function LedgerPage() {
                 {filtered.map((r) => {
                   const open = expanded === r.key;
                   return (
-                    <>
+                    <Fragment key={r.key}>
                       <tr
-                        key={r.key}
                         className="cursor-pointer border-b border-border last:border-0 hover:bg-accent/60"
                         onClick={() => setExpanded(open ? null : r.key)}
                       >
@@ -239,7 +238,7 @@ function LedgerPage() {
                         </td>
                       </tr>
                       {open && (
-                        <tr key={`${r.key}-detail`} className="border-b border-border">
+                        <tr className="border-b border-border">
                           <td colSpan={6} className="bg-muted/40 px-3 py-4">
                             <div className="space-y-3">
                               {r.sales.map((s) => {
@@ -312,7 +311,7 @@ function LedgerPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

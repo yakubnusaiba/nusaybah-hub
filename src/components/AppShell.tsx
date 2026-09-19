@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
+  BookOpen,
   Boxes,
   FileText,
   Globe,
@@ -28,6 +29,7 @@ const NAV = [
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/sales", label: "Sales", icon: ShoppingCart },
   { to: "/customers", label: "Customers", icon: Users },
+  { to: "/ledger", label: "Customer Ledger", icon: BookOpen },
   { to: "/invoices", label: "Invoices", icon: FileText },
 ] as const;
 
