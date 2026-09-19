@@ -415,6 +415,44 @@ export async function fetchSalePayments(saleId: string): Promise<SalePayment[]> 
   }));
 }
 
+export function useAllSalePayments() {
+  const [value, setValue] = useState<SalePayment[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("sale_payments")
+      .select("*")
+      .order("date", { ascending: false });
+    if (error) {
+      console.error("Failed to load payments", error);
+      setHydrated(true);
+      return;
+    }
+    setValue(
+      (data ?? []).map((r) => ({
+        id: str((r as Row)["id"]),
+        saleId: str((r as Row)["sale_id"]),
+        amount: num((r as Row)["amount"]),
+        method: str((r as Row)["method"]),
+        note: str((r as Row)["note"]),
+        date: str((r as Row)["date"]),
+      })),
+    );
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    void load();
+    listeners.add(load);
+    return () => {
+      listeners.delete(load);
+    };
+  }, [load]);
+
+  return { value, hydrated } as const;
+}
+
 export async function addSalePayment(
   sale: Sale,
   amount: number,
