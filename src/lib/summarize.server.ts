@@ -10,23 +10,51 @@ export async function generateSummary(data: {
   text: string;
   length: SummaryLength;
 }): Promise<SummaryResult> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey)
+  // Provider resolution: Lovable AI Gateway when hosted on Lovable,
+  // otherwise a self-supplied OpenAI / Google / OpenRouter key (e.g. on Vercel).
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const openaiKey = process.env["OPENAI_API_KEY"];
+  const geminiKey = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_AI_API_KEY"];
+  const openrouterKey = process.env["OPENROUTER_API_KEY"];
+
+  let endpoint: string;
+  let apiKey: string;
+  let model: string;
+  let extraHeaders: Record<string, string> = {};
+
+  if (lovableKey) {
+    endpoint = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    apiKey = lovableKey;
+    model = process.env["LOVABLE_AI_MODEL"] || "google/gemini-3.8-flash";
+    extraHeaders = { "Lovable-API-Key": lovableKey, "X-Lovable-AIG-SDK": "fetch" };
+  } else if (openaiKey) {
+    endpoint = "https://api.openai.com/v1/chat/completions";
+    apiKey = openaiKey;
+    model = process.env["AI_MODEL"] || "gpt-4o-mini";
+  } else if (geminiKey) {
+    endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+    apiKey = geminiKey;
+    model = process.env["AI_MODEL"] || "gemini-2.0-flash";
+  } else if (openrouterKey) {
+    endpoint = "https://openrouter.ai/api/v1/chat/completions";
+    apiKey = openrouterKey;
+    model = process.env["AI_MODEL"] || "google/gemini-2.0-flash-001";
+  } else {
     throw new Error("The AI service is not configured yet. Please contact your administrator.");
+  }
 
   let res: Response;
   try {
-    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    res = await fetch(endpoint, {
       method: "POST",
       signal: AbortSignal.timeout(60000),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
+        ...extraHeaders,
       },
       body: JSON.stringify({
-        model: process.env["LOVABLE_AI_MODEL"] || "google/gemini-3.8-flash",
+        model,
         messages: [
           {
             role: "system",
