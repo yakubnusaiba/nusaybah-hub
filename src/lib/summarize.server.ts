@@ -13,7 +13,7 @@ export async function generateSummary(data: {
   // Provider resolution: Lovable AI Gateway when hosted on Lovable,
   // otherwise a self-supplied OpenAI / Google / OpenRouter key (e.g. on Vercel).
   const lovableKey = process.env["LOVABLE_API_KEY"];
-  const openaiKey = process.env["OPENAI_API_KEY"];
+  const openaiKey = process.env["OPENAI_API_KEY"] || process.env["OPENAKEY"];
   const geminiKey = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_AI_API_KEY"];
   const openrouterKey = process.env["OPENROUTER_API_KEY"];
 
