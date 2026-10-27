@@ -128,7 +128,7 @@ export async function lookupNipostPostcode(raw: string): Promise<NipostOutcome> 
   }
 
   if (!data.valid) {
-    const notFound = (data.status || "").toLowerCase() === "not_found" || data.valid === false;
+    const notFound = (data.status || "").toLowerCase() === "not_found";
     return {
       ok: false,
       reason: "not_found",
