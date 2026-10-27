@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Download,
   ImageDown,
+  Loader2,
   Plus,
   Printer,
   Receipt,
   Search,
+  ShieldCheck,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -33,6 +35,7 @@ import {
   formatCurrency,
   formatDate,
   generateId,
+  lookupNipostPostcode,
   paymentStatus,
   printHtml,
   statusClasses,
@@ -43,6 +46,7 @@ import {
   useSettings,
   type Sale,
   type SalePayment,
+  type NipostLookupResult,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/sales")({
