@@ -26,6 +26,7 @@ import {
   inputClass,
   labelClass,
 } from "@/components/AppShell";
+import { lookupNipostPostcode, type NipostLookupResult } from "@/lib/postcode";
 import {
   PAYMENT_METHODS,
   addSalePayment,
@@ -35,7 +36,6 @@ import {
   formatCurrency,
   formatDate,
   generateId,
-  lookupNipostPostcode,
   paymentStatus,
   printHtml,
   statusClasses,
@@ -46,7 +46,6 @@ import {
   useSettings,
   type Sale,
   type SalePayment,
-  type NipostLookupResult,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/sales")({
@@ -93,6 +92,29 @@ function SalesPage() {
   const [history, setHistory] = useState<SalePayment[]>([]);
   const [payForm, setPayForm] = useState({ amount: "", method: "Cash", note: "" });
   const [saving, setSaving] = useState(false);
+
+  // NIPOST postcode lookup
+  const [postcodeInput, setPostcodeInput] = useState("");
+  const [postcodeBusy, setPostcodeBusy] = useState(false);
+  const [postcodeResult, setPostcodeResult] = useState<NipostLookupResult | null>(null);
+  const [postcodeError, setPostcodeError] = useState("");
+
+  const resetPostcode = () => {
+    setPostcodeInput("");
+    setPostcodeBusy(false);
+    setPostcodeResult(null);
+    setPostcodeError("");
+  };
+
+  const verifyPostcode = async () => {
+    setPostcodeResult(null);
+    setPostcodeError("");
+    setPostcodeBusy(true);
+    const outcome = await lookupNipostPostcode(postcodeInput);
+    setPostcodeBusy(false);
+    if (outcome.ok) setPostcodeResult(outcome.result);
+    else setPostcodeError(outcome.message);
+  };
 
   const liveSale = payFor ? (sales.find((s) => s.id === payFor.id) ?? payFor) : null;
 
