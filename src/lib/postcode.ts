@@ -17,9 +17,11 @@
 const NIPOST_API_KEY = "nipost_pk_test_b1323e22b4bf8e4a353d15705b8f2e4181f266a5b9acdb3c";
 const BASE_URL = "https://api.postcode.gov.ng";
 
-// A Nigerian postcode is 12 characters in 5 segments:
+// A Nigerian postcode is a 5-segment code:
 // SS NN DDD AA NN — state(2 alpha) lga(2 num) district(3 alnum) area(2 alpha) unit(2 num)
+// e.g. FC-01-A01-KP-27 (11 characters in total, per the official examples)
 const SEGMENT_LENGTHS = [2, 2, 3, 2, 2];
+const SEGMENTS_TOTAL = SEGMENT_LENGTHS.reduce((a, b) => a + b, 0);
 const POSTCODE_RE = /^[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z]{2}\d{2}$/;
 
 export type NipostLookupResult = {
@@ -42,7 +44,7 @@ export type NipostOutcome =
 /** Accepts "FC-01-A01-KP-27", "FC 01 A01 KP 27" or "FC01A01KP27" and returns the canonical hyphenated form. */
 export function normalizePostcode(raw: string): string | null {
   const compact = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (compact.length !== 12 || !POSTCODE_RE.test(compact)) return null;
+  if (compact.length !== SEGMENTS_TOTAL || !POSTCODE_RE.test(compact)) return null;
   const parts: string[] = [];
   let i = 0;
   for (const len of SEGMENT_LENGTHS) {
@@ -136,7 +138,8 @@ export async function lookupNipostPostcode(raw: string): Promise<NipostOutcome> 
     };
   }
 
-  const [stateCode, lgaCode, districtCode, areaCode, unitCode] = postcode.split("-");
+  const [stateCode = "", lgaCode = "", districtCode = "", areaCode = "", unitCode = ""] =
+    postcode.split("-");
   const [stateName, lgaName] = await Promise.all([
     stateNameOf(stateCode),
     lgaNameOf(stateCode, lgaCode),
