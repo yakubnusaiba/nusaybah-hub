@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Download,
   ImageDown,
+  Loader2,
   Plus,
   Printer,
   Receipt,
   Search,
+  ShieldCheck,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -24,6 +26,7 @@ import {
   inputClass,
   labelClass,
 } from "@/components/AppShell";
+import { lookupNipostPostcode, type NipostLookupResult } from "@/lib/postcode";
 import {
   PAYMENT_METHODS,
   addSalePayment,
@@ -90,6 +93,29 @@ function SalesPage() {
   const [payForm, setPayForm] = useState({ amount: "", method: "Cash", note: "" });
   const [saving, setSaving] = useState(false);
 
+  // NIPOST postcode lookup
+  const [postcodeInput, setPostcodeInput] = useState("");
+  const [postcodeBusy, setPostcodeBusy] = useState(false);
+  const [postcodeResult, setPostcodeResult] = useState<NipostLookupResult | null>(null);
+  const [postcodeError, setPostcodeError] = useState("");
+
+  const resetPostcode = () => {
+    setPostcodeInput("");
+    setPostcodeBusy(false);
+    setPostcodeResult(null);
+    setPostcodeError("");
+  };
+
+  const verifyPostcode = async () => {
+    setPostcodeResult(null);
+    setPostcodeError("");
+    setPostcodeBusy(true);
+    const outcome = await lookupNipostPostcode(postcodeInput);
+    setPostcodeBusy(false);
+    if (outcome.ok) setPostcodeResult(outcome.result);
+    else setPostcodeError(outcome.message);
+  };
+
   const liveSale = payFor ? (sales.find((s) => s.id === payFor.id) ?? payFor) : null;
 
   useEffect(() => {
@@ -147,6 +173,7 @@ function SalesPage() {
       amountPaid: "",
       paymentMethod: "Cash",
     });
+    resetPostcode();
     setOpen(false);
   };
 
@@ -340,6 +367,65 @@ function SalesPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className={labelClass}>Customer Postcode</label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                className={inputClass}
+                placeholder="e.g. FC-01-A01-KP-27"
+                value={postcodeInput}
+                onChange={(e) => {
+                  setPostcodeInput(e.target.value);
+                  setPostcodeResult(null);
+                  setPostcodeError("");
+                }}
+              />
+              <button
+                type="button"
+                className={`${btnOutline} shrink-0 justify-center`}
+                disabled={postcodeBusy}
+                onClick={() => void verifyPostcode()}
+              >
+                {postcodeBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4" />
+                )}
+                Verify Postcode
+              </button>
+            </div>
+            {postcodeError && (
+              <p className="mt-1 text-sm font-medium text-destructive">{postcodeError}</p>
+            )}
+            {postcodeResult && (
+              <div className="mt-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
+                <p className="flex items-center gap-2 font-semibold text-success">
+                  <ShieldCheck className="h-4 w-4" />
+                  Valid NIPOST Postcode — {postcodeResult.postcode}
+                </p>
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                  <dt className="text-muted-foreground">State</dt>
+                  <dd className="font-medium">
+                    {postcodeResult.stateName ?? "—"} ({postcodeResult.stateCode})
+                  </dd>
+                  <dt className="text-muted-foreground">LGA</dt>
+                  <dd className="font-medium">
+                    {postcodeResult.lgaName ?? "—"} ({postcodeResult.lgaCode})
+                  </dd>
+                  <dt className="text-muted-foreground">District</dt>
+                  <dd className="font-medium">{postcodeResult.districtCode}</dd>
+                  <dt className="text-muted-foreground">Area</dt>
+                  <dd className="font-medium">{postcodeResult.areaCode}</dd>
+                  <dt className="text-muted-foreground">Building unit</dt>
+                  <dd className="font-medium">{postcodeResult.unitCode}</dd>
+                  <dt className="text-muted-foreground">NIPOST status</dt>
+                  <dd className="font-medium capitalize">
+                    {postcodeResult.status} · {postcodeResult.verified ? "Verified" : "Unverified"}
+                  </dd>
+                </dl>
+              </div>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
